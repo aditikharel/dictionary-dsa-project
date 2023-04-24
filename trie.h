@@ -1,34 +1,33 @@
-//By Atharva Shekatkar
-//20BDS0067
 
 #include<string>
 #include<fstream>
-#include"animation.h"
+#include<iostream>
 
-//wordfound flag is used to check whether the word to be searched/deleted is found or not
+
+//to check whether the word to be searched/deleted is found or not
 bool wordfound = true;
 
-//searching flag is used to display whether we are searching for a given word or if we are 
-//done searching and need to start looking for suggestion words
+//to check whether word is being searched or 
+//searching is completed and need to start looking for suggestions
 bool searching = true;
 
-//to keep count of the suggestion words displayed
+//count of suggestion words
 int count = 0;
 
 //gets standard output
 HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
 
-//words.txt and meanings.txt are the files containing words and meanings for the dictionary respectively
 std::ifstream in1("words.txt");
 std::ifstream in2("meanings.txt");
 std::string s1, s2;
 
-//number of english alphabets
 const int NUM_OF_ALPHABET = 26;
 
-//Structure of a Trie node
-class TrieNode{
+
+//Trie Node structure
+class TrieNode
+{
     public:
         TrieNode *children[NUM_OF_ALPHABET];
         bool isEndOfWord;
@@ -36,28 +35,46 @@ class TrieNode{
         std::string meaning;
 };
 
+void animate(std::string s)
+{
+ 
+    //displays character of string
+    for(int i = 0; i < s.size(); i++)
+    {
+        std::cout<<s[i]<<std::flush;
+
+        //checks if output has reached the end of screen
+        if((i >= 98) && (i % 98 == 0))
+            std::cout<<std::endl;
+        
+    }
+    std::cout<<std::endl;
+ 
+}
 
 //returns new trie node initialized to NULL
-TrieNode *getNode(void){
+TrieNode *getNode(void)
+{
     TrieNode *ptr = new TrieNode; 
     
     ptr->isEndOfWord = false;
     ptr->word = "0";
     ptr->meaning = "0";
 
-    //initializes each child pointer to NULL
+    //initialize each child pointer to NULL
     for(int i = 0; i < NUM_OF_ALPHABET; i++)
         ptr->children[i] = NULL;
     
     return ptr;
 }
 
-//inserts key into tree.
 //If key is part of a bigger word and is already present, it marks the required node as end of word
-void insert(TrieNode *root, std::string key, std::string mean){
+void insert(TrieNode *root, std::string key, std::string mean)
+{
     TrieNode *ptr = root;
     
-    for(int i = 0; i < key.length(); i++){
+    for(int i = 0; i < key.length(); i++)
+    {
         //gets the position of the node to go to next for insertion of next character
         int index = key[i] - 'a';
 
@@ -74,20 +91,25 @@ void insert(TrieNode *root, std::string key, std::string mean){
 
 }
 
-//checks if the node has no children. If it is empty, returns true else returns false
-bool isEmpty(TrieNode *root){
-    //iteratively checks if each child node is not NULL
-    for(int i = 0; i < NUM_OF_ALPHABET; i++){
+//checks if the node has no children. 
+//If it is empty, returns true 
+bool isEmpty(TrieNode *root)
+{
+    //checks if each child node is not NULL
+    for(int i = 0; i < NUM_OF_ALPHABET; i++)
+    {
         if(root->children[i])
             return false;
     }
     return true;
 }
 
-TrieNode *remove(TrieNode *root, std::string key, int depth = 0){
-    
-    //if word is not found, then this block is executed
-    if(!root || ((depth == key.size()) && (root->isEndOfWord == false))){
+TrieNode *remove(TrieNode *root, std::string key, int depth = 0)
+{
+
+    //When word not found
+    if(!root || ((depth == key.size()) && (root->isEndOfWord == false)))
+    {
         SetConsoleTextAttribute(hConsole, 12);
         animate("No such word found!");
         animate("Please check if you're writing the correct word!\n");
@@ -95,11 +117,12 @@ TrieNode *remove(TrieNode *root, std::string key, int depth = 0){
         return NULL;
     }
     
-    //executed once we reach the depth equal to length of key
-    if(depth == key.size()){
-
+    //executed once depth equal to length of key
+    if(depth == key.size())
+    {
         //if word is found, the current node is no longer the end of a word
-        if(root->isEndOfWord){
+        if(root->isEndOfWord)
+        {
             root->isEndOfWord = false;
             root->meaning = "0";
             root->word = "0";
@@ -112,22 +135,22 @@ TrieNode *remove(TrieNode *root, std::string key, int depth = 0){
         }
         
         //if current node has no children, then delete the current node and set the value to NULL
-        if(isEmpty(root)){
+        if(isEmpty(root))
+        {
             delete(root);
             root = NULL;
         }
 
         return root;
-
     }
 
     //if not last character, recursively call the function for the next character
     int index = key[depth] - 'a';
     root->children[index] = remove(root->children[index], key, depth + 1);
 
-    //if root does not have any child (it's only child got deleted),
-    //and it is not the end of a word, then delete the node
-    if(isEmpty(root) && root->isEndOfWord == false){
+    //if only child of root got deleted, and it is not the end of word, delete node
+    if(isEmpty(root) && root->isEndOfWord == false)
+    {
         delete root;
         root = NULL;
     }
@@ -136,19 +159,18 @@ TrieNode *remove(TrieNode *root, std::string key, int depth = 0){
 }
 
 
-//recursive function for both searching the trie structure and for autocompleting words
+//recursive function for searching the trie structure and for autocompleting words
 //autocomplete works regardless of the fact whether the word exists in the trie or not
-void search_and_suggest(TrieNode *root, std::string key, int depth = 0){
+void search_and_suggest(TrieNode *root, std::string key, int depth = 0)
+{
 
-    //searching operation is done until the depth equal to length of key is reached
-    //after that, we begin to find words for autocompletion
+    //searching operation is done until the depth equal to length of key is reached, then find words for suggest
 
-    //searching and wordfound flags are set to true until we reach the depth equal to 
-    //the length of the key or until we encounter a NULL node
-    if(depth <= key.size() && searching){
-        
-        //if NULL node is found or given key is not a word, searching and wordfound are set to false
-        if(!root || (depth == key.size() && root->isEndOfWord == false)){
+    //searching and wordfound flags are set to true until we reach the depth= length os key ow untill NULL node
+    if(depth <= key.size() && searching)
+    {
+        if(!root || (depth == key.size() && root->isEndOfWord == false))
+        {
             SetConsoleTextAttribute(hConsole, 12);
             animate("No such word found!\n");
             wordfound = false;
@@ -156,20 +178,16 @@ void search_and_suggest(TrieNode *root, std::string key, int depth = 0){
             animate("Did you mean: ");
             searching = false;
 
-            //if length of key is greater than 1, we return the function.
-            //The idea behind this is that if key is "ther", the autocomplete/suggestion feature should suggest both 
-            //"the" as well as "there", taking into account that it's possible we actually meant to type "the"
-            //but ended up accidentally pressing "r".
-            //however, if we return for key of length 1 as well, it will go back to depth 0
-            //all words begin from depth 0, hence we would get a list of all words in the dictionary
-            //as a result, this condition is required
+            //for key of length greater than 1, return function
+            //for key of length 1, it will go for depth 0 then suggest all words in dictionary
+            //Example can be ther, the ,there
             if(key.size() > 1)
-                return;
-            
+                return;   
         }
         
-        //if the given word is found, wordfound is kept true and searching is set to false 
-        else if(depth == key.size() && root->isEndOfWord){
+        //When word found
+        else if(depth == key.size() && root->isEndOfWord)
+        {
             searching = false;
 
             SetConsoleTextAttribute(hConsole, 10);
@@ -179,60 +197,52 @@ void search_and_suggest(TrieNode *root, std::string key, int depth = 0){
             animate((root->word + ": " + root->meaning + "\n"));
 
             animate("See these other suggestions:");
-            
-            //if length of key is greater than 1, we return the function.
-            //The idea behind this is that if we enter "ther", the autocomplete/suggestion feature should suggest both 
-            //"the" as well as "there", taking into account that it's possible we actually meant to type "the"
-            //but ended up accidentally pressing "r".
-            //however, if we return for key of length 1 as well, it will go back to depth 0
-            //all words begin from depth 0, hence we would get a list of all words in the dictionary
-            //as a result, this condition is required 
+     
             if(key.size() > 1)
                 return;
             
         }
 
-        //if we have not reached the depth of the word,
-        //the function is recursively called for the next letter in the key 
-        else{
+        //Till depth reached, recursively calls the function for next letter
+
+        else
+        {
             int index = key[depth] - 'a';
             search_and_suggest(root->children[index], key, depth + 1);
         }
     }
 
     
-    //the suggestion part begins from here:
+    //suggestion part
     int length = key.size();
 
     
-    //we reduce the size of length as we return from the function if length of key is greater than 1
-    //we are only interested in words for suggestions if their length is greater than or equal to one less than length of key 
+    //Reduce size of length if length of key is greater than 1 
+    //only for suggestions if their length is greater than or equal to one less than length of key 
     if(key.size() > 1)
         length -= 1;
 
     
-    //this block will only be executed for depth >= length and if the searching part is completed(that is, when searching == false)
-    //additionally, we only show 6 suggestions, as sometimes the suggestions list may get too long
-    if((searching == false) && (depth >= length) && (count < 6)){
-        
-        //if we encounter a NULL node, we return
+    //for depth >= length and if the searching part is completed: searching = false
+    //only showing 6 suggestions
+    if((searching == false) && (depth >= length) && (count < 6))
+    {
+        //for null node
         if(!root)
             return;
-        
-        
-        
-        //if the given node is the end of a word
-        //and if this word is not the same as the key word, then we display this word
-        if(root->isEndOfWord && root->word != key){
+
+        //if given node is the end of a word and if this word is not key word
+        if(root->isEndOfWord && root->word != key)
+        {
             animate((root->word + "\n"));
-            
-            //incrementing the counter for number of suggestions displayed
+            //counter for suggestions
             count++;
         }
 
 
-        //we iterate for each non-NULL node starting from node at the depth == length to account for maximum suggestions     
-        for(int i = 0; i < NUM_OF_ALPHABET; i++){
+        //iterate for each non-NULL node starting from node at the depth == length    
+        for(int i = 0; i < NUM_OF_ALPHABET; i++)
+        {
             if(root->children[i])
                 search_and_suggest(root->children[i], key, depth + 1);
         }
